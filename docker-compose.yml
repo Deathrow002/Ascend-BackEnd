@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  book-service:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql-db
+    environment:
+      DATABASE_URL: jdbc:mysql://mysql-db:3306/bookdb
+      DATABASE_USER: book_user
+      DATABASE_PASSWORD: book_pass
+    networks:
+      - book-network
+
+  mysql-db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bookdb
+      MYSQL_USER: book_user
+      MYSQL_PASSWORD: book_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - book-network
+
+networks:
+  book-network:
+    driver: bridge
+    name: book-network
+
+volumes:
+  mysql-data:
+    driver: local
