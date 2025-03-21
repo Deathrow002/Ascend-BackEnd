@@ -29,9 +29,8 @@ public class BookService {
 
     // Get a book by ID (returns DTO)
     public BookDTO getBookById(Long id) {
-        return bookRepository.findById(id)
-                .map(BookMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
+        Book book = bookRepository.findById(id).orElseThrow(() -> new RuntimeException("Book not found"));
+        return BookMapper.toDTO(book);
     }
 
     // Add a new book (accepts DTO, returns DTO)
@@ -46,7 +45,7 @@ public class BookService {
                 .map(book -> {
                     book.setTitle(updatedBookDTO.getTitle());
                     book.setAuthor(updatedBookDTO.getAuthor());
-                    book.setPublishedDate(updatedBookDTO.getPublishedDate());
+                    book.setPublishedDate(updatedBookDTO.getPublishedDate()); // Convert before saving
                     return BookMapper.toDTO(bookRepository.save(book));
                 })
                 .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
