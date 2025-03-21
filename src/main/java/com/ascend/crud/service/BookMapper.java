@@ -30,10 +30,22 @@ public class BookMapper {
 
     // Convert Gregorian date to Buddhist Calendar
     private static String convertToBuddhistCalendar(String publishedDate) {
+        if (publishedDate == null || !publishedDate.contains("-")) {
+            throw new IllegalArgumentException("Invalid date format. Expected format: yyyy-MM-dd");
+        }
+
         String[] parts = publishedDate.split("-");
-        int gregorianYear = Integer.parseInt(parts[0]);
-        int buddhistYear = gregorianYear + 543;
-        return buddhistYear + parts[1] + parts[2];  // Return in format yyyy-MM-dd
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid date format. Expected format: yyyy-MM-dd");
+        }
+
+        try {
+            int gregorianYear = Integer.parseInt(parts[0]);
+            int buddhistYear = gregorianYear + 543;
+            return buddhistYear + "-" + parts[1] + "-" + parts[2]; // Ensure proper formatting
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Year must be a valid number", e);
+        }
     }
 
     // Convert Buddhist Calendar back to Gregorian Calendar
