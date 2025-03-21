@@ -1,19 +1,4 @@
-version: '3.8'
-
 services:
-  book-service:
-    build: .
-    ports:
-      - "8080:8080"
-    depends_on:
-      - mysql-db
-    environment:
-      DATABASE_URL: jdbc:mysql://mysql-db:3306/bookdb
-      DATABASE_USER: book_user
-      DATABASE_PASSWORD: book_pass
-    networks:
-      - book-network
-
   mysql-db:
     image: mysql:8
     restart: always
@@ -26,6 +11,24 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+    networks:
+      - book-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "book_user", "-p book_pass" ]
+      interval: 30s
+      retries: 5
+      timeout: 10s
+
+  book-service:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql-db
+    environment:
+      DATABASE_URL: jdbc:mysql://mysql-db:3306/bookdb
+      DATABASE_USER: book_user
+      DATABASE_PASSWORD: book_pass
     networks:
       - book-network
 
