@@ -23,6 +23,6 @@ public class Book {
     private String author;
 
     @Column(nullable = false)
-    private String publishedDate;
+    private LocalDate publishedDate;
 }
 

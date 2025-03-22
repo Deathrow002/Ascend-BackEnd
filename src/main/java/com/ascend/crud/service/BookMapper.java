@@ -3,14 +3,19 @@ package com.ascend.crud.service;
 import com.ascend.crud.model.Book;
 import com.ascend.crud.model.DTO.BookDTO;
 
+import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class BookMapper {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    static Logger LOGGER = LoggerFactory.getLogger(BookMapper.class);
 
     // Convert a Book entity to a BookDTO
     public static BookDTO toDTO(Book book) {
@@ -22,7 +27,8 @@ public class BookMapper {
         bookDTO.setId(book.getId());
         bookDTO.setTitle(book.getTitle());
         bookDTO.setAuthor(book.getAuthor());
-        bookDTO.setPublishedDate(convertToBuddhistCalendar(book.getPublishedDate())); // Convert before sending
+        // Do not convert the Gregorian date to Buddhist calendar
+        bookDTO.setPublishedDate(book.getPublishedDate());
         return bookDTO;
     }
 
@@ -36,78 +42,39 @@ public class BookMapper {
         book.setId(bookDTO.getId());
         book.setTitle(bookDTO.getTitle());
         book.setAuthor(bookDTO.getAuthor());
-        book.setPublishedDate(convertToGregorianCalendar(bookDTO.getPublishedDate())); // Convert before saving
+        // Convert the Buddhist calendar date back to Gregorian before setting
+        book.setPublishedDate(convertToGregorianCalendar(bookDTO.getPublishedDate()));
         return book;
     }
 
-    // Convert Gregorian date to Buddhist Calendar format (String)
-    private static String convertToBuddhistCalendar(String publishedDate) {
-        if (!isBuddhistDate(publishedDate)) {
-            throw new IllegalArgumentException("Invalid Buddhist date format. Expected format: yyyy-MM-dd");
+    // Convert Gregorian date to Buddhist Calendar format (LocalDate)
+    private static LocalDate convertToBuddhistCalendar(LocalDate publishedDate) {
+        if (publishedDate == null) {
+            return null;
         }
-
-        try {
-            LocalDate date = LocalDate.parse(publishedDate, DATE_FORMATTER);
-            int buddhistYear = date.getYear() + 543;
-            return formatDate(date, buddhistYear);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid date format for Buddhist calendar. Expected format: yyyy-MM-dd", e);
-        }
+        return publishedDate.plusYears(543);
     }
 
-    // Convert Buddhist Calendar date back to Gregorian Calendar format (String)
-    private static String convertToGregorianCalendar(String publishedDate) {
-        if (isBuddhistDate(publishedDate)) {
-            return publishedDate; // If it's already a Buddhist date, return it as is
+    // Convert Buddhist Calendar date back to Gregorian Calendar format (LocalDate)
+    private static LocalDate convertToGregorianCalendar(LocalDate publishedDate) {
+        if (publishedDate == null) {
+            return null;
         }
-
-        try {
-            String[] parts = publishedDate.split("-");
-            if (parts.length != 3) {
-                throw new IllegalArgumentException("Invalid date format. Expected format: yyyy-MM-dd");
-            }
-
-            int buddhistYear = Integer.parseInt(parts[0]);
-            int gregorianYear = buddhistYear - 543;
-            return gregorianYear + "-" + parts[1] + "-" + parts[2]; // Ensure correct format
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Buddhist date format. Expected format: yyyy-MM-dd", e);
-        }
+        return publishedDate.minusYears(543);
     }
 
-    // Check if the input date string is a valid Buddhist date
-    private static boolean isBuddhistDate(String dateStr) {
-        try {
-            // Try parsing the date using the Buddhist calendar format
-            String[] parts = dateStr.split("-");
-            if (parts.length != 3) {
-                return false; // Invalid format if it's not exactly "yyyy-MM-dd"
-            }
-
-            int buddhistYear = Integer.parseInt(parts[0]);
-            int gregorianYear = buddhistYear - 543;
-
-            // Check if the year is in the valid range
-            if (gregorianYear < 0) {
-                return false; // Invalid Gregorian year
-            }
-
-            // Validate if the month and day are in correct range
-            int month = Integer.parseInt(parts[1]);
-            int day = Integer.parseInt(parts[2]);
-
-            // Check if the date is a valid Gregorian date
-            LocalDate date = LocalDate.of(gregorianYear, month, day); // This will throw an exception if the date is invalid
-
-            return true; // If all checks pass, it's a valid Buddhist date
-        } catch (Exception e) {
-            return false; // If any exception occurs, it's not a valid Buddhist date
+    // Check if the input date is in the Buddhist calendar or Gregorian calendar and convert to Buddhist if necessary
+    private static LocalDate convertToBuddhistIfNecessary(LocalDate publishedDate) {
+        if (publishedDate == null) {
+            return null;
         }
-    }
-
-    // Helper method to format the date based on the year
-    private static String formatDate(LocalDate date, int year) {
-        return year + "-" + String.format("%02d", date.getMonthValue()) + "-" + String.format("%02d", date.getDayOfMonth());
+        if (publishedDate.getYear() > 2500) {
+            // Already in Buddhist calendar
+            return publishedDate;
+        } else {
+            // Convert to Buddhist calendar
+            return convertToBuddhistCalendar(publishedDate);
+        }
     }
 
     // Convert a list of Books to a list of BookDTOs

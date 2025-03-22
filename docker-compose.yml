@@ -15,7 +15,7 @@ services:
       - book-network
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "book_user", "-p book_pass" ]
-      interval: 30s
+      interval: 5s
       retries: 5
       timeout: 10s
 
