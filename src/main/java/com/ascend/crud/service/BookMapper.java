@@ -27,8 +27,8 @@ public class BookMapper {
         bookDTO.setId(book.getId());
         bookDTO.setTitle(book.getTitle());
         bookDTO.setAuthor(book.getAuthor());
-        // Do not convert the Gregorian date to Buddhist calendar
-        bookDTO.setPublishedDate(book.getPublishedDate());
+        // Convert the Gregorian date to Buddhist calendar before setting
+        bookDTO.setPublishedDate(convertToBuddhistIfNecessary(book.getPublishedDate()));
         return bookDTO;
     }
 
@@ -43,7 +43,7 @@ public class BookMapper {
         book.setTitle(bookDTO.getTitle());
         book.setAuthor(bookDTO.getAuthor());
         // Convert the Buddhist calendar date back to Gregorian before setting
-        book.setPublishedDate(convertToGregorianCalendar(bookDTO.getPublishedDate()));
+        book.setPublishedDate(bookDTO.getPublishedDate().getYear() > 2100 ? bookDTO.getPublishedDate() : convertToBuddhistCalendar(bookDTO.getPublishedDate()));
         return book;
     }
 
@@ -55,20 +55,12 @@ public class BookMapper {
         return publishedDate.plusYears(543);
     }
 
-    // Convert Buddhist Calendar date back to Gregorian Calendar format (LocalDate)
-    private static LocalDate convertToGregorianCalendar(LocalDate publishedDate) {
-        if (publishedDate == null) {
-            return null;
-        }
-        return publishedDate.minusYears(543);
-    }
-
     // Check if the input date is in the Buddhist calendar or Gregorian calendar and convert to Buddhist if necessary
     private static LocalDate convertToBuddhistIfNecessary(LocalDate publishedDate) {
         if (publishedDate == null) {
             return null;
         }
-        if (publishedDate.getYear() > 2500) {
+        if (publishedDate.getYear() > 2100) {
             // Already in Buddhist calendar
             return publishedDate;
         } else {
